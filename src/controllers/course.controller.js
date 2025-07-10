@@ -1,4 +1,5 @@
 const Course = require("../models/course.model");
+const CourseRegistration = require("../models/courseRegistration.model");
 
 /**
  * Tạo khóa học mới
@@ -87,6 +88,51 @@ exports.deleteCourse = async (req, res) => {
     if (!course) return res.status(404).json({ message: "Không tìm thấy khóa học" });
     res.json({ message: "Đã xóa khóa học" });
   } catch (err) {
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+/**
+ * User đăng ký khóa học (Member trở lên)
+ */
+exports.registerCourse = async (req, res) => {
+  const { id: courseId } = req.params;
+  try {
+    // 1. Kiểm xem course có tồn tại?
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Không tìm thấy khóa học" });
+    }
+    // 2. Kiểm xem user đã đăng ký chưa
+    const exists = await CourseRegistration.findOne({
+      user: req.user.id,
+      course: courseId
+    });
+    if (exists) {
+      return res.status(400).json({ message: "Bạn đã đăng ký khóa này rồi" });
+    }
+    // 3. Tạo đăng ký mới
+    await CourseRegistration.create({
+      user: req.user.id,
+      course: courseId
+    });
+    res.json({ message: "Đăng ký khóa học thành công" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+/* Lấy danh sách user đã đăng ký khóa (Admin/Staff)
+ */
+exports.getCourseRegistrations = async (req, res) => {
+  const { id: courseId } = req.params;
+  try {
+    const regs = await CourseRegistration.find({ course: courseId })
+      .populate("user", "username fullName email")
+      .sort("-registeredAt");
+    res.json(regs);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Lỗi server" });
   }
 };

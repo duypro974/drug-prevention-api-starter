@@ -6,8 +6,11 @@ const {
   getCourseById,
   updateCourse,
   deleteCourse,
+   registerCourse,         // ← import thêm
+  getCourseRegistrations  // ← nếu có
 } = require("../controllers/course.controller");
 const { authenticate, authorize } = require("../middlewares/role.middleware");
+
 
 /**
  * @swagger
@@ -157,6 +160,69 @@ router.delete(
   authenticate,
   authorize(["Manager", "Admin"]),
   deleteCourse
+);
+ /**
+ * @swagger
+ * /api/courses/{id}/register:
+ *   post:
+ *     summary: Đăng ký tham gia khóa học
+ *     tags: [Course]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Đăng ký thành công
+ *       400:
+ *         description: Đã đăng ký hoặc dữ liệu không hợp lệ
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Không tìm thấy khóa học
+ */
+router.post(
+  "/:id/register",
+  authenticate,
+  authorize(["Member","Staff","Consultant","Manager","Admin"]),
+  registerCourse
+);
+
+/**
+ * @swagger
+ * /api/courses/{id}/registrations:
+ *   get:
+ *     summary: Lấy danh sách đăng ký khóa học (Staff/Admin)
+ *     tags: [Course]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Mảng đăng ký
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Không tìm thấy khóa học
+ */
+router.get(
+  "/:id/registrations",
+  authenticate,
+  authorize(["Staff","Manager","Admin"]),
+  getCourseRegistrations
 );
 
 module.exports = router;
