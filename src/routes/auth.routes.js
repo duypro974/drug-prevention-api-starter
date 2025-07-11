@@ -2,11 +2,14 @@ const express = require("express");
 const router = express.Router();
 const {
   register,
+  verifyEmail,
   login,
   getProfile,
   updateProfile,
   changePassword,
   logout,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/auth.controller");
 const authenticate = require("../middlewares/auth.middleware");
 const { canCreateAdmin } = require("../middlewares/role.middleware");
@@ -29,24 +32,47 @@ const { canCreateAdmin } = require("../middlewares/role.middleware");
  *               fullName: { type: string }
  *               email: { type: string }
  *               password: { type: string }
- *               role: { type: string, enum: [Guest, Member, Staff, Consultant, Manager, Admin] }
+ *               role: { type: string, enum: [Guest,Member,Staff,Consultant,Manager,Admin] }
  *             example:
  *               username: "john123"
  *               fullName: "John Doe"
  *               email: "john@example.com"
  *               password: "password123"
- *               
  *     responses:
  *       201:
- *         description: Đăng ký thành công
+ *         description: Đăng ký thành công (email verification sent)
  *       400:
- *         description: Email đã tồn tại
+ *         description: Email đã tồn tại hoặc dữ liệu không hợp lệ
  *       403:
  *         description: Chỉ Admin mới được tạo thêm Admin
  *       500:
  *         description: Lỗi server
  */
 router.post("/register", canCreateAdmin, register);
+
+// ===== XÁC THỰC EMAIL =====
+/**
+ * @swagger
+ * /api/auth/verify:
+ *   get:
+ *     summary: Xác thực email đăng ký
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Token xác thực được gửi qua email
+ *     responses:
+ *       200:
+ *         description: Xác thực email thành công
+ *       400:
+ *         description: Token không hợp lệ hoặc đã hết hạn
+ *       500:
+ *         description: Lỗi server
+ */
+router.get("/verify", verifyEmail);
 
 // ===== ĐĂNG NHẬP =====
 /**
@@ -79,12 +105,76 @@ router.post("/register", canCreateAdmin, register);
  *         description: Thiếu email hoặc password
  *       401:
  *         description: Sai mật khẩu
+ *       403:
+ *         description: Chưa xác thực email
  *       404:
  *         description: Không tìm thấy user
  *       500:
  *         description: Lỗi server
  */
 router.post("/login", login);
+
+// ===== QUÊN MẬT KHẨU =====
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Yêu cầu đặt lại mật khẩu
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email: { type: string, example: "duypro974@gmail.com" }
+ *             required: [email]
+ *     responses:
+ *       200:
+ *         description: Email đặt lại mật khẩu đã được gửi
+ *       400:
+ *         description: Thiếu email
+ *       404:
+ *         description: Không tìm thấy user
+ *       500:
+ *         description: Lỗi server
+ */
+router.post("/forgot-password", forgotPassword);
+
+// ===== ĐẶT LẠI MẬT KHẨU =====
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Đặt lại mật khẩu bằng token
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Token đặt lại mật khẩu được gửi qua email
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               newPassword: { type: string, example: "newpass123" }
+ *             required: [newPassword]
+ *     responses:
+ *       200:
+ *        I description: Đặt lại mật khẩu thành công
+ *       400:
+ *         description: Thiếu mật khẩu mới hoặc token không hợp lệ
+ *       500:
+ *         description: Lỗi server
+ */
+router.post("/reset-password", resetPassword);
+
 
 // ===== THÔNG TIN CÁ NHÂN =====
 /**
@@ -153,8 +243,6 @@ router.get("/profile", authenticate, getProfile);
  *         description: Lỗi server
  */
 router.patch("/profile", authenticate, updateProfile);
-
-
 
 // ===== ĐỔI MẬT KHẨU =====
 /**
