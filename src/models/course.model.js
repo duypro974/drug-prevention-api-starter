@@ -1,5 +1,10 @@
+// src/models/course.model.js
 const mongoose = require("mongoose");
 
+/**
+ * Schema Khóa học
+ * - surveyType: Loại khảo sát áp dụng cho khóa (ASSIST hoặc CRAFFT)
+ */
 const courseSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -14,7 +19,7 @@ const courseSchema = new mongoose.Schema({
     type: String,
     required: [true, "Nhóm độ tuổi là bắt buộc"],
     enum: ["học sinh", "sinh viên", "phụ huynh", "giáo viên"],
-     default: "học sinh"
+    default: "học sinh"
   },
   content: {
     type: String, // hoặc Array nếu bạn muốn chia theo chương
@@ -23,6 +28,13 @@ const courseSchema = new mongoose.Schema({
   category: {
     type: String,
     default: "nhận thức", // ví dụ: nhận thức, kỹ năng, ...
+  },
+  // Mới: surveyType
+  surveyType: {
+    type: String,
+    required: [true, "surveyType (ASSIST/CRAFFT) là bắt buộc"],
+    enum: ["ASSIST", "CRAFFT"],
+    description: "Loại khảo sát áp dụng cho khóa học"
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

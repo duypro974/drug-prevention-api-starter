@@ -1,50 +1,56 @@
 // src/app.js
 
-const express       = require("express");
-const cors          = require("cors");
-const dotenv        = require("dotenv");
-const connectDB     = require("./config/db");
-const authRoutes    = require("./routes/auth.routes");
-const courseRoutes  = require("./routes/course.routes");
-const swaggerUi     = require("swagger-ui-express");
-const swaggerSpec   = require("./docs/swagger");
-const surveyRoutes    = require("./routes/survey.routes");
-const appointmentRoutes = require("./routes/appointment.routes");
-const userRoutes = require("./routes/user.routes");
-const programRoutes = require("./routes/program.routes");
-const programSurveyRoutes = require("./routes/programSurvey.routes");
+require("dotenv").config();             // 1. Nạp .env ngay lập tức
+const express               = require("express");
+const cors                  = require("cors");
+const connectDB             = require("./config/db");
+const swaggerUi             = require("swagger-ui-express");
+const swaggerSpec           = require("./docs/swagger");
 
-
-dotenv.config();
-connectDB();
+// --- Routes ---
+const authRoutes            = require("./routes/auth.routes");
+const userRoutes            = require("./routes/user.routes");
+const courseRoutes          = require("./routes/course.routes");
+const surveyRoutes          = require("./routes/survey.routes");
+const programRoutes         = require("./routes/program.routes");
+const programSurveyRoutes   = require("./routes/programSurvey.routes");
+const appointmentRoutes     = require("./routes/appointment.routes");
 
 const app = express();
+
+// --- Connect to MongoDB ---
+connectDB();
 
 // --- Global middleware ---
 app.use(cors());
 app.use(express.json());
 
 // --- API routes ---
-app.use("/api/programs", programRoutes);
-// Nested: /api/programs/:id/survey
-app.use("/api/programs/:id/survey", programSurveyRoutes);
-
+// Auth & user
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/appointments", appointmentRoutes);
+
+// Courses & course-survey
+app.use("/api/courses", courseRoutes);
+// Nếu bạn có nested survey under courses:
+// app.use("/api/courses/:id/survey", courseCourseSurveyRoutes);
+
+// Surveys (general ASSIST/CRAFFT)
 app.use("/api/surveys", surveyRoutes);
 
-app.use("/api/auth",   authRoutes);
-app.use("/api/courses",courseRoutes);
+// Programs & program-survey
+app.use("/api/programs", programRoutes);
+app.use("/api/programs/:id/survey", programSurveyRoutes);
 
+// Appointments
+app.use("/api/appointments", appointmentRoutes);
 
 // --- Swagger UI ---
 app.use(
   "/api-docs",
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, {
-    swaggerOptions: {
-      tagsSorter: "none",
-    }
+    swaggerOptions: { tagsSorter: "none" }
   })
 );
 
@@ -61,7 +67,7 @@ app.use((err, req, res, next) => {
     .json({ message: err.message || "Something went wrong!" });
 });
 
-// --- Start ---
+// --- Start server ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running: http://localhost:${PORT}`);
