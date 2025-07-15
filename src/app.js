@@ -15,6 +15,8 @@ const surveyRoutes          = require("./routes/survey.routes");
 const programRoutes         = require("./routes/program.routes");
 const programSurveyRoutes   = require("./routes/programSurvey.routes");
 const appointmentRoutes     = require("./routes/appointment.routes");
+const blogRoutes = require("./routes/blog.routes");
+const pagesRoutes = require("./routes/pages.routes");
 
 const app = express();
 
@@ -44,6 +46,9 @@ app.use("/api/programs/:id/survey", programSurveyRoutes);
 
 // Appointments
 app.use("/api/appointments", appointmentRoutes);
+// Blogs
+app.use("/api/blogs", blogRoutes);
+app.use("/api/pages", pagesRoutes);
 
 // --- Swagger UI ---
 app.use(
