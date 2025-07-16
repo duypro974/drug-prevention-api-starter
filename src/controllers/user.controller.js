@@ -123,15 +123,3 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-/**
- * Lấy danh sách consultant (chuyên viên)
- */
-exports.getConsultants = async (req, res) => {
-  try {
-    const consultants = await User.find({ role: "Consultant" }, "_id username fullName email");
-    res.json(consultants);
-  } catch (err) {
-    console.error("Error fetching consultants:", err);
-    res.status(500).json({ message: "Lỗi server" });
-  }
-};

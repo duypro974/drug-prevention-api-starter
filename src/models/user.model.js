@@ -47,6 +47,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       description: 'Thời gian hết hạn của token đặt lại mật khẩu',
     },
+
+    // ⏰ Lịch làm việc theo từng ngày (cho Consultant)
+    workSchedule: {
+      type: Map,
+      of: String,
+      description: 'Lịch làm việc theo ngày trong tuần, ví dụ: Monday: "08:00-12:00, 14:00-17:00"',
+      default: {},
+    },
   },
   {
     timestamps: true, // Tự động tạo createdAt và updatedAt

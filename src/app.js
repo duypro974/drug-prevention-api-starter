@@ -17,6 +17,7 @@ const programSurveyRoutes   = require("./routes/programSurvey.routes");
 const appointmentRoutes     = require("./routes/appointment.routes");
 const blogRoutes = require("./routes/blog.routes");
 const pagesRoutes = require("./routes/pages.routes");
+const consultantRoutes = require("./routes/consultant.routes");
 
 const app = express();
 
@@ -31,6 +32,8 @@ app.use(express.json());
 // Auth & user
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+// Consultant profile
+app.use("/api/consultants", consultantRoutes);
 
 // Courses & course-survey
 app.use("/api/courses", courseRoutes);

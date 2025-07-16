@@ -33,11 +33,18 @@ const { authenticate, authorize } = require("../middlewares/role.middleware");
  *             type: object
  *             required: [consultantId, scheduledAt]
  *             properties:
- *               consultantId: { type: string }
- *               scheduledAt: { type: string, format: date-time }
+ *               consultantId:
+ *                 type: string
+ *               scheduledAt:
+ *                 type: string
+ *                 format: date-time
  *     responses:
  *       201:
  *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
  *       400:
  *         description: Bad request
  */
@@ -54,6 +61,12 @@ router.post("/", authenticate, createAppointment);
  *     responses:
  *       200:
  *         description: Danh sách appointments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
  */
 router.get("/mine", authenticate, getMyAppointments);
 
@@ -68,6 +81,12 @@ router.get("/mine", authenticate, getMyAppointments);
  *     responses:
  *       200:
  *         description: Danh sách appointments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
  */
 router.get("/consultant", authenticate, getConsultantAppointments);
 
@@ -82,6 +101,12 @@ router.get("/consultant", authenticate, getConsultantAppointments);
  *     responses:
  *       200:
  *         description: Danh sách tất cả
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
  */
 router.get("/", authenticate, authorize(["Manager","Admin"]), getAllAppointments);
 
@@ -105,11 +130,18 @@ router.get("/", authenticate, authorize(["Manager","Admin"]), getAllAppointments
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [status]
  *             properties:
- *               status: { type: string, enum: [pending, confirmed, cancelled] }
+ *               status:
+ *                 type: string
+ *                 enum: [pending, confirmed, cancelled]
  *     responses:
  *       200:
  *         description: Updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
  */
 router.patch("/:id/status", authenticate, updateStatus);
 
@@ -130,7 +162,47 @@ router.patch("/:id/status", authenticate, updateStatus);
  *     responses:
  *       200:
  *         description: Cancelled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
  */
 router.patch("/:id/cancel", authenticate, cancelAppointment);
 
 module.exports = router;
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Appointment:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         user:
+ *           type: object
+ *           properties:
+ *             _id: { type: string }
+ *             username: { type: string }
+ *             fullName: { type: string }
+ *         consultant:
+ *           type: object
+ *           properties:
+ *             _id: { type: string }
+ *             username: { type: string }
+ *             fullName: { type: string }
+ *         scheduledAt:
+ *           type: string
+ *           format: date-time
+ *         status:
+ *           type: string
+ *           enum: [pending, confirmed, cancelled]
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
+

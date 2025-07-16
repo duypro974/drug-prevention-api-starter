@@ -1,17 +1,37 @@
 const Program = require("../models/program.model");
 
+// Danh sách khảo sát hợp lệ
+const allowedSurveyTypes = [null, "ASSIST", "CRAFFT"];
+
 /** Tạo chương trình mới (Admin/Manager) */
 exports.createProgram = async (req, res) => {
   try {
-    const { title, description, startDate, endDate, location } = req.body;
+    const {
+      title,
+      description,
+      startDate,
+      endDate,
+      location,
+      preSurvey,
+      postSurvey
+    } = req.body;
+
+    // Validate loại khảo sát
+    if (!allowedSurveyTypes.includes(preSurvey) || !allowedSurveyTypes.includes(postSurvey)) {
+      return res.status(400).json({ message: "preSurvey hoặc postSurvey không hợp lệ" });
+    }
+
     const program = await Program.create({
       title,
       description,
       startDate,
       endDate,
       location,
+      preSurvey,
+      postSurvey,
       createdBy: req.user.id
     });
+
     res.status(201).json(program);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -47,6 +67,15 @@ exports.getProgramById = async (req, res) => {
 exports.updateProgram = async (req, res) => {
   try {
     const updates = req.body;
+
+    // Nếu cập nhật khảo sát thì kiểm tra hợp lệ
+    if (updates.preSurvey && !allowedSurveyTypes.includes(updates.preSurvey)) {
+      return res.status(400).json({ message: "preSurvey không hợp lệ" });
+    }
+    if (updates.postSurvey && !allowedSurveyTypes.includes(updates.postSurvey)) {
+      return res.status(400).json({ message: "postSurvey không hợp lệ" });
+    }
+
     const program = await Program.findByIdAndUpdate(
       req.params.id,
       updates,
@@ -76,8 +105,10 @@ exports.registerProgram = async (req, res) => {
     const program = await Program.findById(req.params.id);
     if (!program) return res.status(404).json({ message: "Không tìm thấy chương trình" });
 
-    // Kiểm xem đã đăng ký chưa
-    if (program.participants.some(p => p.user.toString() === req.user.id)) {
+    const alreadyRegistered = program.participants.some(
+      (p) => p.user.toString() === req.user.id
+    );
+    if (alreadyRegistered) {
       return res.status(400).json({ message: "Bạn đã đăng ký rồi" });
     }
 

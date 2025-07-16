@@ -46,7 +46,7 @@ const { authenticate, authorize } = require("../middlewares/role.middleware");
  *       401:
  *         description: Unauthorized
  */
-router.get("/questions", authenticate, getQuestions);
+router.get("/questions", getQuestions);
 
 
 // Submit survey

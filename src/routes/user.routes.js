@@ -2,36 +2,7 @@ const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/user.controller");
 const { authenticate, authorize } = require("../middlewares/role.middleware");
-/**
- * @swagger
- * /api/users/consultants:
- *   get:
- *     summary: Lấy danh sách chuyên viên (consultant) để đặt lịch
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Danh sách consultant
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   _id: { type: string }
- *                   username: { type: string }
- *                   fullName: { type: string }
- *                   email: { type: string }
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- *       500:
- *         description: Lỗi server
- */
-router.get("/consultants", authenticate, userController.getConsultants);
+
 
 
 /**
