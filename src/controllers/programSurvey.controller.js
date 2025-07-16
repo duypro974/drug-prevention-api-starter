@@ -1,6 +1,8 @@
-const Survey  = require("../models/survey.model");
+const Survey = require("../models/survey.model");
 const Program = require("../models/program.model");
-const { evaluate } = require("./survey.controller");  // tái sử dụng hàm evaluate
+const User = require("../models/user.model");
+const { evaluate } = require("./survey.controller");
+const { sendRiskLevelEmail } = require("../utils/email.utils");
 
 /**
  * Nộp pre- hoặc post-survey cho một Program
@@ -15,13 +17,15 @@ exports.submitProgramSurvey = async (req, res) => {
     if (!program) {
       return res.status(404).json({ message: "Chương trình không tồn tại" });
     }
+
     // 2. Kiểm tra user đã đăng ký
     const isParticipant = program.participants.some(
-      p => p.user.toString() === req.user.id
+      (p) => p.user.toString() === req.user.id
     );
     if (!isParticipant) {
       return res.status(403).json({ message: "Bạn chưa đăng ký chương trình này" });
     }
+
     // 3. Tính score/risk
     const { score, riskLevel } = evaluate(type, answers);
 
@@ -29,19 +33,54 @@ exports.submitProgramSurvey = async (req, res) => {
     const survey = await Survey.create({
       user: req.user.id,
       program: programId,
-      phase,      // "pre" hoặc "post"
+      phase, // "pre" hoặc "post"
       type,
       answers,
       score,
-      riskLevel
+      riskLevel,
     });
 
-    res.status(201).json({ survey });
+    // 5. Gợi ý recommendation và nextAction
+    let recommendation;
+    const nextActions = [
+      { label: "Xem chương trình khác", link: "/programs" },
+    ];
+
+    if (riskLevel === "high") {
+      recommendation = "Bạn đang ở mức rủi ro cao — hãy đặt lịch tư vấn ngay.";
+      nextActions.push({ label: "Đặt lịch tư vấn", link: "/appointments" });
+    } else if (riskLevel === "moderate") {
+      recommendation = "Bạn có mức rủi ro trung bình — cân nhắc trò chuyện với chuyên viên.";
+      nextActions.push({ label: "Tìm hiểu thêm", link: "/resources" });
+    } else {
+      recommendation = "Bạn đang ở mức an toàn — hãy tiếp tục duy trì lối sống tích cực.";
+    }
+
+    // 6. Gửi email nếu có
+    const user = await User.findById(req.user.id).select("email");
+    if (user?.email) {
+      await sendRiskLevelEmail(user.email, {
+        courseTitle: `Khảo sát ${type} - Chương trình ${program.title}`,
+        riskLevel,
+        recommendation,
+        link: "/programs",
+      });
+    }
+
+    // 7. Trả về kết quả
+    res.status(201).json({
+      message: "Khảo sát đã lưu",
+      survey,
+      recommendation,
+      nextActions,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Lỗi server" });
   }
 };
+
+
 
 /**
  * Lấy tất cả kết quả pre/post survey của một program

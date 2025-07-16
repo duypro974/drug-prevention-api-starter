@@ -63,21 +63,26 @@ exports.submitCoursePreSurvey = async (req, res) => {
     });
 
     // Gợi ý tiếp theo
-    let recommendation, nextAction;
+    let recommendation;
+    const nextActions = [
+      { label: "Xem khóa học", link: "/courses" },
+      { label: "Xem chương trình", link: "/programs" },
+    ];
+
     if (riskLevel === "high" || riskLevel === "moderate") {
       recommendation = riskLevel === "high"
         ? "Bạn đang ở mức rủi ro cao — hãy đặt lịch tư vấn ngay với chuyên viên."
         : "Bạn ở mức rủi ro trung bình — cân nhắc tham gia buổi tư vấn.";
-      nextAction = {
-        action: "bookConsultation",
-        link: `/api/appointments?course=${courseId}`,
-      };
+      nextActions.push({
+        label: "Đặt lịch tư vấn",
+        link: `/appointments?course=${courseId}`,
+      });
     } else {
       recommendation = "Bạn có mức rủi ro thấp — bạn có thể bắt đầu khóa học ngay bây giờ.";
-      nextAction = {
-        action: "startCourse",
+      nextActions.push({
+        label: "Bắt đầu học",
         link: `/courses/${courseId}/content`,
-      };
+      });
     }
 
     const user = await User.findById(req.user.id).select("email");
@@ -85,19 +90,20 @@ exports.submitCoursePreSurvey = async (req, res) => {
       courseTitle: course.title,
       riskLevel,
       recommendation,
-      link: nextAction.link,
+      link: nextActions.at(-1).link, // dùng link phù hợp cuối cùng
     });
 
     res.status(201).json({
       survey,
       recommendation,
-      nextAction,
+      nextActions,
     });
   } catch (err) {
     console.error(err);
     res.status(400).json({ message: err.message || "Lỗi xử lý khảo sát" });
   }
 };
+
 
 /**
  * Submit Post-Survey cho khóa học

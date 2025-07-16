@@ -75,6 +75,7 @@ exports.submitPublicSurvey = async (req, res) => {
     recommendation,
     nextActions: [
       { label: "Xem khóa học", link: "/courses" },
+      { label: "Xem Chương trình", link: "/programs" },
       { label: "Đặt lịch tư vấn", link: "/appointments" },
     ],
   });
