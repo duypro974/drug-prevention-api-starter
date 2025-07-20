@@ -18,6 +18,8 @@ const appointmentRoutes     = require("./routes/appointment.routes");
 const blogRoutes = require("./routes/blog.routes");
 const pagesRoutes = require("./routes/pages.routes");
 const consultantRoutes = require("./routes/consultant.routes");
+const aiRoutes = require('./routes/ai.routes');
+const chatHistoryRoutes = require('./routes/chatHistory.routes');
 
 const app = express();
 
@@ -52,6 +54,10 @@ app.use("/api/appointments", appointmentRoutes);
 // Blogs
 app.use("/api/blogs", blogRoutes);
 app.use("/api/pages", pagesRoutes);
+// AI routes
+app.use('/api/ai', aiRoutes);
+// Chat history
+app.use('/api/chat', chatHistoryRoutes);
 
 // --- Swagger UI ---
 app.use(
