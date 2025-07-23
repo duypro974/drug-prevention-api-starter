@@ -27,7 +27,11 @@ const app = express();
 connectDB();
 
 // --- Global middleware ---
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true, // nếu sau này dùng cookie hoặc auth header
+}));
+
 app.use(express.json());
 
 // --- API routes ---
