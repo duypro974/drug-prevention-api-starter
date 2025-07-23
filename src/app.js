@@ -6,6 +6,7 @@ const cors                  = require("cors");
 const connectDB             = require("./config/db");
 const swaggerUi             = require("swagger-ui-express");
 const swaggerSpec           = require("./docs/swagger");
+const publicSurveyRoutes = require("./routes/publicSurvey.routes");
 
 // --- Routes ---
 const authRoutes            = require("./routes/auth.routes");
@@ -15,11 +16,14 @@ const surveyRoutes          = require("./routes/survey.routes");
 const programRoutes         = require("./routes/program.routes");
 const programSurveyRoutes   = require("./routes/programSurvey.routes");
 const appointmentRoutes     = require("./routes/appointment.routes");
-const blogRoutes = require("./routes/blog.routes");
-const pagesRoutes = require("./routes/pages.routes");
-const consultantRoutes = require("./routes/consultant.routes");
-const aiRoutes = require('./routes/ai.routes');
-const chatHistoryRoutes = require('./routes/chatHistory.routes');
+const blogRoutes            = require("./routes/blog.routes");
+const pagesRoutes           = require("./routes/pages.routes");
+const consultantRoutes      = require("./routes/consultant.routes");
+const aiRoutes              = require('./routes/ai.routes');
+const chatHistoryRoutes     = require('./routes/chatHistory.routes');
+
+// Thêm route thanh toán Stripe
+const paymentRoutes         = require("./routes/payment.route");
 
 const app = express();
 
@@ -35,6 +39,8 @@ app.use(cors({
 app.use(express.json());
 
 // --- API routes ---
+// Public survey routes
+app.use("/api/surveys", publicSurveyRoutes);
 // Auth & user
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -62,6 +68,9 @@ app.use("/api/pages", pagesRoutes);
 app.use('/api/ai', aiRoutes);
 // Chat history
 app.use('/api/chat', chatHistoryRoutes);
+
+// **Thêm đường dẫn API thanh toán**
+app.use("/api/payment", paymentRoutes);
 
 // --- Swagger UI ---
 app.use(

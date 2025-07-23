@@ -15,8 +15,8 @@ async function sendVerificationEmail(to, token, type = "verifyEmail") {
   const isResetPassword = type === "resetPassword";
   const subject = isResetPassword ? 'Đặt lại mật khẩu' : 'Xác thực email đăng ký';
   const url = isResetPassword 
-    ? `${process.env.BACKEND_URL}/api/auth/reset-password?token=${token}`
-    : `${process.env.BACKEND_URL}/api/auth/verify?token=${token}`;
+    ? `${process.env.FRONTEND_URL}/reset-password?token=${token}`
+    : `${process.env.BACKEND_URL}/verify?token=${token}`;
   const actionText = isResetPassword ? 'đặt lại mật khẩu' : 'xác thực email';
 
   await transporter.sendMail({

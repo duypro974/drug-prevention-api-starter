@@ -29,6 +29,13 @@ const courseSchema = new mongoose.Schema({
     type: String,
     default: "nhận thức", // ví dụ: nhận thức, kỹ năng, ...
   },
+  // Giá khóa học
+  price: {
+    type: Number,
+    required: true,
+    min: 0,
+    default: 0
+  },
   // Mới: surveyType
   surveyType: {
     type: String,

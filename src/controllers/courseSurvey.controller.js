@@ -45,6 +45,10 @@ exports.submitCoursePreSurvey = async (req, res) => {
     if (!reg) return res.status(403).json({ message: "Bạn chưa đăng ký khóa này" });
     if (reg.preSurveyDone) return res.status(400).json({ message: "Bạn đã làm Pre-Survey rồi" });
 
+    // Check trùng khảo sát (nếu cần)
+    const existed = await Survey.findOne({ user: req.user.id, course: courseId, phase: "pre" });
+    if (existed) return res.status(409).json({ message: "Bạn đã nộp Pre-Survey rồi" });
+
     const { total, riskLevel } = evaluateSurvey(course.surveyType, answers);
 
     const survey = await Survey.create({
@@ -59,6 +63,7 @@ exports.submitCoursePreSurvey = async (req, res) => {
 
     await CourseRegistration.findByIdAndUpdate(reg._id, {
       preSurveyDone: true,
+      preSurveyAt: new Date(), // <--- thêm dòng này!
       preRiskLevel: riskLevel,
     });
 
@@ -86,12 +91,14 @@ exports.submitCoursePreSurvey = async (req, res) => {
     }
 
     const user = await User.findById(req.user.id).select("email");
-    await sendRiskLevelEmail(user.email, {
-      courseTitle: course.title,
-      riskLevel,
-      recommendation,
-      link: nextActions.at(-1).link, // dùng link phù hợp cuối cùng
-    });
+    if (user?.email) {
+      await sendRiskLevelEmail(user.email, {
+        courseTitle: course.title,
+        riskLevel,
+        recommendation,
+        link: nextActions.at(-1).link,
+      });
+    }
 
     res.status(201).json({
       survey,
@@ -103,7 +110,6 @@ exports.submitCoursePreSurvey = async (req, res) => {
     res.status(400).json({ message: err.message || "Lỗi xử lý khảo sát" });
   }
 };
-
 
 /**
  * Submit Post-Survey cho khóa học
@@ -134,6 +140,7 @@ exports.submitCoursePostSurvey = async (req, res) => {
 
     await CourseRegistration.findByIdAndUpdate(reg._id, {
       postSurveyDone: true,
+      postSurveyAt: new Date(), // <--- thêm dòng này!
     });
 
     res.status(201).json({

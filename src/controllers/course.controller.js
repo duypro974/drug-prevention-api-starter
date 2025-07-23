@@ -12,14 +12,20 @@ exports.getMyCourses = async (req, res) => {
     const regs = await CourseRegistration.find({ user: req.user.id })
       .populate({
         path: "course",
-        select: "title description ageGroup surveyType category createdAt"
+        select: "title description ageGroup surveyType category price createdAt"
       })
       .sort("-registeredAt");
 
     const result = regs.map(reg => ({
       course: reg.course,
       completed: reg.completed,
-      registeredAt: reg.registeredAt
+      registeredAt: reg.registeredAt,
+      preSurveyDone: reg.preSurveyDone,
+      preSurveyAt: reg.preSurveyAt,
+      preRiskLevel: reg.preRiskLevel,
+      postSurveyDone: reg.postSurveyDone,
+      postSurveyAt: reg.postSurveyAt,
+      // nếu cần có thêm trường khác, thêm tại đây
     }));
 
     res.json(result);
@@ -29,12 +35,13 @@ exports.getMyCourses = async (req, res) => {
   }
 };
 
+
 /**
  * Tạo khóa học mới
  */
 exports.createCourse = async (req, res) => {
   try {
-    const { title, description, ageGroup, content, category, surveyType } = req.body;
+    const { title, description, ageGroup, content, category, surveyType, price } = req.body;
 
     // surveyType bắt buộc
     if (!["ASSIST","CRAFFT"].includes(surveyType)) {
@@ -44,6 +51,7 @@ exports.createCourse = async (req, res) => {
     const course = await Course.create({
       title, description, ageGroup, content, category,
       surveyType,
+        price, // Thêm trường price vào đây
       createdBy: req.user.id
     });
     res.status(201).json(course);
@@ -86,7 +94,7 @@ exports.getCourseById = async (req, res) => {
 exports.updateCourse = async (req, res) => {
   try {
     const updates = req.body;
-    const allowedFields = ["title","description","ageGroup","content","category"];
+    const allowedFields = ["title","description","ageGroup","content","category","price","surveyType"];
     const invalid = Object.keys(updates).filter(f => !allowedFields.includes(f));
     if (invalid.length) {
       return res.status(400)

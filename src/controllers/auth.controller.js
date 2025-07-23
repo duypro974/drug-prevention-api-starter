@@ -207,8 +207,8 @@ exports.changePassword = async (req, res, next) => {
       return res.status(400).json({ message: "Mật khẩu cũ không đúng" });
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
+    user.password = newPassword;      // <-- Chỉ gán chuỗi mới, KHÔNG hash ở đây!
+    await user.save();                // <-- Mongoose sẽ tự hash trong pre('save')
     console.log("Password changed for user:", user.email);
 
     res.json({ message: "Đổi mật khẩu thành công" });
@@ -217,6 +217,7 @@ exports.changePassword = async (req, res, next) => {
     next(err);
   }
 };
+
 
 // ===== QUÊN MẬT KHẨU =====
 exports.forgotPassword = async (req, res, next) => {

@@ -26,7 +26,34 @@ const { getMyCourses } = require("../controllers/course.controller");
  *     responses:
  *       200:
  *         description: Danh sách khóa học đã đăng ký
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   course:
+ *                     $ref: '#/components/schemas/Course'
+ *                   completed:
+ *                     type: boolean
+ *                   preSurveyDone:
+ *                     type: boolean
+ *                   preSurveyAt:
+ *                     type: string
+ *                     format: date-time
+ *                   preRiskLevel:
+ *                     type: string
+ *                   postSurveyDone:
+ *                     type: boolean
+ *                   postSurveyAt:
+ *                     type: string
+ *                     format: date-time
+ *                   registeredAt:
+ *                     type: string
+ *                     format: date-time
  */
+
 router.get(
   "/my",
   authenticate,
@@ -34,7 +61,7 @@ router.get(
   getMyCourses
 );
 /**
- * @swagger
+  * @swagger
  * /api/courses:
  *   post:
  *     summary: Tạo khóa học mới
@@ -51,14 +78,19 @@ router.get(
  *               - title
  *               - ageGroup
  *               - content
- *               - surveyType     # ← bắt buộc
+ *               - surveyType
+ *               - price                # ← price cũng là bắt buộc
  *             properties:
  *               title: { type: string }
  *               description: { type: string }
  *               ageGroup: { type: string, enum: [học sinh, sinh viên, phụ huynh, giáo viên] }
  *               content: { type: string }
  *               category: { type: string }
- *               surveyType: { type: string, enum: [ASSIST, CRAFFT] }  # ← thêm
+ *               surveyType: { type: string, enum: [ASSIST, CRAFFT] }
+ *               price:                 # ← thêm mô tả price
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Giá khóa học (VND)
  *     responses:
  *       201: { description: Tạo thành công }
  *       400: { description: Dữ liệu không hợp lệ }
@@ -126,6 +158,10 @@ router.get("/:id", getCourseById);
  *               ageGroup: { type: string, enum: [học sinh, sinh viên, phụ huynh, giáo viên] }
  *               content: { type: string }
  *               category: { type: string }
+ *               price:                 # ← thêm price cho PATCH
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Giá khóa học (VND)
  *     responses:
  *       200: { description: Cập nhật thành công }
  *       400: { description: Dữ liệu không hợp lệ }
@@ -139,6 +175,7 @@ router.patch(
   authorize(["Staff", "Manager", "Admin"]),
   updateCourse
 );
+
 
 /**
  * @swagger

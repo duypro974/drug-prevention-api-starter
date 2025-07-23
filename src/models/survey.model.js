@@ -13,52 +13,57 @@ const surveySchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: [true, "User is required for a survey"]
+    // Chỉ require user nếu không phải khảo sát public
+    required: function () {
+      // phase mặc định là "pre" nếu không có
+      return this.phase !== "public";
+    },
   },
   type: {
     type: String,
     required: [true, "Survey type is required"],
     enum: {
       values: ["ASSIST", "CRAFFT"],
-      message: "Type must be either ASSIST or CRAFFT"
-    }
+      message: "Type must be either ASSIST or CRAFFT",
+    },
   },
   answers: {
     type: [Number],
     required: [true, "Answers are required"],
     validate: {
-      validator: function(arr) {
-        return arr.every(v => typeof v === 'number');
+      validator: function (arr) {
+        return arr.every((v) => typeof v === "number");
       },
-      message: "Answers must be an array of numbers"
-    }
+      message: "Answers must be an array of numbers",
+    },
   },
   score: {
     type: Number,
     required: [true, "Score is required"],
-    min: [0, "Score cannot be negative"]
+    min: [0, "Score cannot be negative"],
   },
   riskLevel: {
     type: String,
     required: [true, "Risk level is required"],
     enum: {
       values: ["low", "moderate", "high"],
-      message: "Risk level must be low, moderate, or high"
-    }
+      message: "Risk level must be low, moderate, or high",
+    },
   },
   program: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Program",
-    required: false
+    required: false,
   },
   phase: {
     type: String,
-    enum: ["pre","post"],
-    required: false
-  }
+    enum: ["pre", "post", "public"], // Thêm "public" ở đây
+    required: false,
+    default: "pre",
+  },
 },
- {
-  timestamps: true
+{
+  timestamps: true,
 });
 
 module.exports = mongoose.model("Survey", surveySchema);

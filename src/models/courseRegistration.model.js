@@ -7,6 +7,11 @@ const mongoose = require("mongoose");
  * - course: Khóa học được đăng ký
  * - registeredAt: Thời gian đăng ký
  * - completed: Đã hoàn thành khóa học chưa
+ * - preSurveyDone: Đã làm Pre-Survey chưa
+ * - preSurveyAt: Thời điểm làm Pre-Survey
+ * - preRiskLevel: Mức rủi ro (low/moderate/high) từ Pre-Survey
+ * - postSurveyDone: Đã làm Post-Survey chưa
+ * - postSurveyAt: Thời điểm làm Post-Survey
  */
 const courseRegSchema = new mongoose.Schema({
   user: {
@@ -22,6 +27,27 @@ const courseRegSchema = new mongoose.Schema({
   completed: {
     type: Boolean,
     default: false
+  },
+  preSurveyDone: {
+    type: Boolean,
+    default: false
+  },
+  preSurveyAt: {
+    type: Date,
+    default: null
+  },
+  preRiskLevel: {
+    type: String,
+    enum: ["low", "moderate", "high"],
+    default: null
+  },
+  postSurveyDone: {
+    type: Boolean,
+    default: false
+  },
+  postSurveyAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: { createdAt: "registeredAt", updatedAt: false }
