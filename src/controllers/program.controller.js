@@ -43,6 +43,7 @@ exports.getAllPrograms = async (req, res) => {
   try {
     const programs = await Program.find()
       .populate("createdBy", "username fullName")
+       .populate("participants.user", "_id username fullName") // <-- thêm dòng này!
       .sort("-startDate");
     res.json(programs);
   } catch (err) {

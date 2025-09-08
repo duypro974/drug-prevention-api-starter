@@ -48,16 +48,51 @@ const userSchema = new mongoose.Schema(
       description: 'Thời gian hết hạn của token đặt lại mật khẩu',
     },
 
-    // ⏰ Lịch làm việc theo từng ngày (cho Consultant)
+    // Thông tin chuyên viên tư vấn (Consultant)
+    avatar: {
+      type: String,
+      description: 'Link ảnh đại diện chuyên viên',
+    },
+    bio: {
+      type: String,
+      description: 'Mô tả ngắn về chuyên gia',
+      default: "",
+      trim: true,
+    },
+    qualifications: {
+      type: [String],
+      description: 'Danh sách bằng cấp',
+      default: [],
+    },
+    specialties: {
+      type: [String],
+      description: 'Danh sách chuyên môn',
+      default: [],
+    },
+
+    // Khung giờ rảnh để đặt lịch (array object)
+    availableSlots: {
+      type: [
+        {
+          day: { type: String },          // "monday", "tuesday", ...
+          slots: [{ type: String }]       // ["08:00", "09:00", ...]
+        }
+      ],
+      default: [],
+      description: 'Danh sách khung giờ rảnh từng ngày trong tuần'
+    },
+
+    // Lịch làm việc text (cũ, tuỳ bạn muốn dùng hay không)
     workSchedule: {
       type: Map,
       of: String,
-      description: 'Lịch làm việc theo ngày trong tuần, ví dụ: Monday: "08:00-12:00, 14:00-17:00"',
+      description: 'Lịch làm việc text theo ngày, ví dụ: Monday: "08:00-12:00, 14:00-17:00"',
       default: {},
     },
+
   },
   {
-    timestamps: true, // Tự động tạo createdAt và updatedAt
+    timestamps: true,
   }
 );
 

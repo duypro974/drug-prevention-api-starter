@@ -1,4 +1,3 @@
-// src/models/courseRegistration.model.js
 const mongoose = require("mongoose");
 
 /**
@@ -12,6 +11,10 @@ const mongoose = require("mongoose");
  * - preRiskLevel: Mức rủi ro (low/moderate/high) từ Pre-Survey
  * - postSurveyDone: Đã làm Post-Survey chưa
  * - postSurveyAt: Thời điểm làm Post-Survey
+ * - paid: Đã thanh toán chưa
+ * - paidAt: Thời điểm thanh toán
+ * - paymentMethod: Phương thức thanh toán
+ * - paymentInfo: Thông tin giao dịch thanh toán (nếu muốn lưu)
  */
 const courseRegSchema = new mongoose.Schema({
   user: {
@@ -47,6 +50,25 @@ const courseRegSchema = new mongoose.Schema({
   },
   postSurveyAt: {
     type: Date,
+    default: null
+  },
+
+  // --------- CÁC TRƯỜNG THANH TOÁN ---------
+  paid: {
+    type: Boolean,
+    default: false
+  },
+  paidAt: {
+    type: Date,
+    default: null
+  },
+  paymentMethod: {
+    type: String,
+    enum: ["stripe", "momo", "banktransfer", "other"],
+    default: null
+  },
+  paymentInfo: {
+    type: Object,
     default: null
   }
 }, {

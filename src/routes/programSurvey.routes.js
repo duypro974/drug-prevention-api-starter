@@ -128,5 +128,51 @@ router.get(
   authorize(["Admin", "Manager"]),
   getProgramSurveyStats
 );
+/**
+ * @swagger
+ * /api/programs/{id}/survey/user/{userId}:
+ *   get:
+ *     summary: Lấy tất cả khảo sát của 1 user trong chương trình
+ *     tags: [ProgramSurvey]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID chương trình
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID người dùng
+ *     responses:
+ *       200:
+ *         description: Danh sách survey của user này trong chương trình
+ *       404:
+ *         description: Không tìm thấy
+ */
+router.get(
+  "/user/:userId",
+  authenticate,
+  authorize(["Admin", "Manager"]),
+  async (req, res) => {
+    const { id: programId, userId } = req.params;
+    try {
+      const surveys = await require("../models/survey.model").find({
+        program: programId,
+        user: userId,
+      })
+        .sort("-createdAt")
+        .populate("user", "username fullName");
+      res.json(surveys);
+    } catch (err) {
+      res.status(500).json({ message: "Lỗi server" });
+    }
+  }
+);
 
 module.exports = router;

@@ -36,6 +36,12 @@ const courseSchema = new mongoose.Schema({
     min: 0,
     default: 0
   },
+  ageMin:{
+    type:Number,
+    required: [true, "Tuổi tối thiểu là bắt buộc"],
+    min: 0,
+    default: 18,
+  },
   // Mới: surveyType
   surveyType: {
     type: String,

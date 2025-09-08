@@ -13,11 +13,14 @@ const surveySchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    // Chỉ require user nếu không phải khảo sát public
     required: function () {
-      // phase mặc định là "pre" nếu không có
       return this.phase !== "public";
     },
+  },
+  course: {                    // <-- THÊM TRƯỜNG NÀY
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Course",
+    required: false,           // chỉ bắt buộc với pre/post (BE validate khi submit)
   },
   type: {
     type: String,
@@ -57,7 +60,7 @@ const surveySchema = new mongoose.Schema({
   },
   phase: {
     type: String,
-    enum: ["pre", "post", "public"], // Thêm "public" ở đây
+    enum: ["pre", "post", "public"],
     required: false,
     default: "pre",
   },

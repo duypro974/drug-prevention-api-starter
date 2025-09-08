@@ -1,3 +1,4 @@
+const mongoose = require("mongoose"); // <--- THÊM DÒNG NÀY
 const Survey = require("../models/survey.model");
 const Program = require("../models/program.model");
 const User = require("../models/user.model");
@@ -20,27 +21,37 @@ exports.submitProgramSurvey = async (req, res) => {
 
     // 2. Kiểm tra user đã đăng ký
     const isParticipant = program.participants.some(
-      (p) => p.user.toString() === req.user.id
+      (p) =>
+        (p.user && p.user.toString() === req.user.id) ||
+        (typeof p.user === "string" && p.user === req.user.id)
     );
     if (!isParticipant) {
       return res.status(403).json({ message: "Bạn chưa đăng ký chương trình này" });
     }
 
-    // 3. Tính score/risk
+    // 3. Validate phase và type
+    if (!["pre", "post"].includes(phase)) {
+      return res.status(400).json({ message: "Phase phải là 'pre' hoặc 'post'" });
+    }
+    if (!["ASSIST", "CRAFFT"].includes(type)) {
+      return res.status(400).json({ message: "Type không hợp lệ" });
+    }
+
+    // 4. Tính score/risk
     const { score, riskLevel } = evaluate(type, answers);
 
-    // 4. Lưu survey
+    // 5. Lưu survey
     const survey = await Survey.create({
       user: req.user.id,
       program: programId,
-      phase, // "pre" hoặc "post"
+      phase,
       type,
       answers,
       score,
       riskLevel,
     });
 
-    // 5. Gợi ý recommendation và nextAction
+    // 6. Gợi ý recommendation và nextAction
     let recommendation;
     const nextActions = [
       { label: "Xem chương trình khác", link: "/programs" },
@@ -56,7 +67,7 @@ exports.submitProgramSurvey = async (req, res) => {
       recommendation = "Bạn đang ở mức an toàn — hãy tiếp tục duy trì lối sống tích cực.";
     }
 
-    // 6. Gửi email nếu có
+    // 7. Gửi email nếu có
     const user = await User.findById(req.user.id).select("email");
     if (user?.email) {
       await sendRiskLevelEmail(user.email, {
@@ -67,7 +78,7 @@ exports.submitProgramSurvey = async (req, res) => {
       });
     }
 
-    // 7. Trả về kết quả
+    // 8. Trả về kết quả
     res.status(201).json({
       message: "Khảo sát đã lưu",
       survey,
@@ -79,8 +90,6 @@ exports.submitProgramSurvey = async (req, res) => {
     res.status(500).json({ message: "Lỗi server" });
   }
 };
-
-
 
 /**
  * Lấy tất cả kết quả pre/post survey của một program
@@ -97,13 +106,13 @@ exports.getProgramSurveys = async (req, res) => {
 
     // Lấy survey phân theo phase
     const surveys = await Survey.find({ program: programId })
-      .populate("user","username fullName")
+      .populate("user", "username fullName")
       .sort("phase createdAt");
 
     // Gom nhóm theo phase
     const result = {
-      pre: surveys.filter(s => s.phase === "pre"),
-      post: surveys.filter(s => s.phase === "post")
+      pre: surveys.filter((s) => s.phase === "pre"),
+      post: surveys.filter((s) => s.phase === "post"),
     };
 
     res.json(result);
@@ -127,16 +136,19 @@ exports.getProgramSurveyStats = async (req, res) => {
         $group: {
           _id: "$phase",
           avgScore: { $avg: "$score" },
-          count:    { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     // Đưa về dạng { pre: {...}, post: {...} }
-    const stats = agg.reduce((acc, cur) => {
-      acc[cur._id] = { avgScore: cur.avgScore, count: cur.count };
-      return acc;
-    }, { pre: { avgScore:0,count:0 }, post:{avgScore:0,count:0} });
+    const stats = agg.reduce(
+      (acc, cur) => {
+        acc[cur._id] = { avgScore: cur.avgScore, count: cur.count };
+        return acc;
+      },
+      { pre: { avgScore: 0, count: 0 }, post: { avgScore: 0, count: 0 } }
+    );
 
     res.json(stats);
   } catch (err) {
@@ -144,3 +156,27 @@ exports.getProgramSurveyStats = async (req, res) => {
     res.status(500).json({ message: "Lỗi server" });
   }
 };
+// GET /api/programs/:id/survey
+exports.getProgramSurveys = async (req, res) => {
+  try {
+    const { id: programId } = req.params;
+    const program = await Program.findById(programId);
+    if (!program) {
+      return res.status(404).json({ message: "Chương trình không tồn tại" });
+    }
+
+    // Lấy tất cả survey theo program, phân theo phase (pre/post)
+    const surveys = await Survey.find({ program: programId })
+      .populate("user", "username fullName email") // lấy info người nộp survey
+      .sort("phase createdAt");
+
+    const result = {
+      pre: surveys.filter(s => s.phase === "pre"),
+      post: surveys.filter(s => s.phase === "post")
+    };
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+

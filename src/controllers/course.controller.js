@@ -41,7 +41,7 @@ exports.getMyCourses = async (req, res) => {
  */
 exports.createCourse = async (req, res) => {
   try {
-    const { title, description, ageGroup, content, category, surveyType, price } = req.body;
+    const { title, description, ageGroup, content, category, surveyType, price, ageMin } = req.body;
 
     // surveyType bắt buộc
     if (!["ASSIST","CRAFFT"].includes(surveyType)) {
@@ -52,7 +52,8 @@ exports.createCourse = async (req, res) => {
       title, description, ageGroup, content, category,
       surveyType,
         price, // Thêm trường price vào đây
-      createdBy: req.user.id
+        ageMin, // Thêm trường ageMin vào đây
+      createdBy: req.user.id,
     });
     res.status(201).json(course);
   } catch (err) {
@@ -94,7 +95,7 @@ exports.getCourseById = async (req, res) => {
 exports.updateCourse = async (req, res) => {
   try {
     const updates = req.body;
-    const allowedFields = ["title","description","ageGroup","content","category","price","surveyType"];
+    const allowedFields = ["title","description","ageGroup","content","category","price","surveyType","ageMin"];
     const invalid = Object.keys(updates).filter(f => !allowedFields.includes(f));
     if (invalid.length) {
       return res.status(400)
@@ -129,6 +130,7 @@ exports.deleteCourse = async (req, res) => {
 /**
  * User đăng ký khóa học (Member trở lên) và gửi link Pre-Survey qua email
  */
+// User đăng ký khóa học (Member trở lên) và gửi link Pre-Survey qua email
 exports.registerCourse = async (req, res) => {
   const { id: courseId } = req.params;
   try {
@@ -140,8 +142,27 @@ exports.registerCourse = async (req, res) => {
       return res.status(400).json({ message: "Bạn đã đăng ký khóa này rồi" });
     }
 
-    // Lưu đăng ký
-    await CourseRegistration.create({ user: req.user.id, course: courseId });
+    // Nếu KHÓA HỌC là MIỄN PHÍ thì set paid = true luôn, nếu có trường price
+    let paid = true, paidAt = new Date(), paymentMethod = "stripe";
+    if (course.price && course.price > 0) {
+      paid = true; // Nếu muốn luôn true khi không dùng webhook
+      paidAt = new Date();
+      paymentMethod = "stripe";
+    } else {
+      // miễn phí thì vẫn có thể set paid true, hoặc logic khác tùy bạn
+      paid = true;
+      paidAt = new Date();
+      paymentMethod = "free";
+    }
+
+    // Lưu đăng ký (cập nhật trường paid)
+    await CourseRegistration.create({
+      user: req.user.id,
+      course: courseId,
+      paid,
+      paidAt,
+      paymentMethod,
+    });
 
     // Lấy email user
     const user = await User.findById(req.user.id).select("email");
@@ -160,6 +181,7 @@ exports.registerCourse = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 /**
  * Đánh dấu user đã hoàn thành khóa học
  */

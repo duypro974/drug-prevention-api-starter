@@ -11,10 +11,25 @@ exports.createAppointment = async (req, res) => {
       return res.status(400).json({ message: "Consultant và thời gian là bắt buộc" });
     }
 
+    // Không cho đặt lịch ở quá khứ
+    if (new Date(scheduledAt) < Date.now()) {
+      return res.status(400).json({ message: "Không thể đặt lịch ở thời điểm quá khứ!" });
+    }
+
     // Kiểm tra consultant có tồn tại và đúng role không
     const consultant = await User.findOne({ _id: consultantId, role: "Consultant" });
     if (!consultant) {
       return res.status(400).json({ message: "Consultant không hợp lệ" });
+    }
+
+    // Kiểm tra lịch trùng
+    const exists = await Appointment.findOne({
+      consultant: consultantId,
+      scheduledAt,
+      status: { $ne: "cancelled" }
+    });
+    if (exists) {
+      return res.status(400).json({ message: "Khung giờ này đã được đặt. Vui lòng chọn giờ khác!" });
     }
 
     const appt = await Appointment.create({
@@ -25,6 +40,7 @@ exports.createAppointment = async (req, res) => {
     });
     res.status(201).json(appt);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -39,6 +55,7 @@ exports.getMyAppointments = async (req, res) => {
       .sort("-scheduledAt");
     res.json(appts);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -53,6 +70,7 @@ exports.getConsultantAppointments = async (req, res) => {
       .sort("-scheduledAt");
     res.json(appts);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -68,6 +86,7 @@ exports.getAllAppointments = async (req, res) => {
       .sort("-scheduledAt");
     res.json(appts);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -95,6 +114,7 @@ exports.updateStatus = async (req, res) => {
     await appt.save();
     res.json(appt);
   } catch (err) {
+    console.error(err);
     res.status(400).json({ message: err.message });
   }
 };
@@ -120,6 +140,7 @@ exports.cancelAppointment = async (req, res) => {
     await appt.save();
     res.json({ message: "Đã hủy lịch hẹn", appt });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };

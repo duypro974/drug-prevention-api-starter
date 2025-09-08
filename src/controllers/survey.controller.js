@@ -3,9 +3,7 @@ const assistQuestions = require("../data/assistQuestions");
 const crafftQuestions = require("../data/crafftQuestions");
 const { Parser } = require("json2csv");
 
-/**
- * Tính score và riskLevel cho ASSIST/CRAFFT
- */
+// Hàm đánh giá điểm và mức rủi ro
 function evaluate(type, answers) {
   const total = answers.reduce((sum, v) => sum + v, 0);
   let level;
@@ -17,20 +15,16 @@ function evaluate(type, answers) {
   return { score: total, riskLevel: level };
 }
 
-/**
- * Lấy bộ câu hỏi ASSIST/CRAFFT
- */
-exports.getQuestions = (req, res) => {
+// Lấy bộ câu hỏi ASSIST/CRAFFT
+function getQuestions(req, res) {
   const { type } = req.query;
   if (type === "ASSIST") return res.json(assistQuestions);
   if (type === "CRAFFT") return res.json(crafftQuestions);
   return res.status(400).json({ message: "Type phải là ASSIST hoặc CRAFFT" });
-};
+}
 
-/**
- * Submit một survey mới
- */
-exports.submitSurvey = async (req, res) => {
+// Nộp khảo sát
+async function submitSurvey(req, res) {
   try {
     const { type, answers } = req.body;
     // Validate type và answers
@@ -54,10 +48,10 @@ exports.submitSurvey = async (req, res) => {
       }
     }
 
-    // Evaluate score
+    // Đánh giá điểm
     const { score, riskLevel } = evaluate(type, answers);
 
-    // Lưu survey
+    // Lưu vào DB
     const survey = await Survey.create({
       user: req.user.id,
       type,
@@ -77,40 +71,51 @@ exports.submitSurvey = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: "Lỗi server" });
   }
-};
+}
 
-/**
- * Lấy lịch sử survey của chính user
- */
-exports.getMySurveys = async (req, res) => {
+// Lấy lịch sử khảo sát của bản thân
+async function getMySurveys(req, res) {
   try {
-    const surveys = await Survey.find({ user: req.user.id }).sort("-createdAt");
+    const surveys = await Survey.find({ user: req.user.id })
+      .populate("course", "title")
+      .sort("-createdAt");
     res.json(surveys);
   } catch (err) {
     res.status(500).json({ message: "Lỗi server" });
   }
-};
+}
 
-/**
- * Cho Admin/Manager xem tất cả survey
- */
-exports.getAllSurveys = async (req, res) => {
+// Admin xem tất cả survey, lọc, phân trang
+async function getAllSurveys(req, res) {
   try {
-    const surveys = await Survey.find().populate("user", "username fullName").sort("-createdAt");
-    res.json(surveys);
+    const { course, type, riskLevel, page = 1, limit = 20 } = req.query;
+    const q = {};
+    if (course) q.course = course;
+    if (type) q.type = type;
+    if (riskLevel) q.riskLevel = riskLevel;
+
+    const total = await Survey.countDocuments(q);
+    const surveys = await Survey.find(q)
+      .populate("user", "username fullName")
+      .populate("course", "title")
+      .sort("-createdAt")
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    res.json({ total, page: parseInt(page), limit: parseInt(limit), surveys });
   } catch (err) {
     res.status(500).json({ message: "Lỗi server" });
   }
-};
+}
 
-/**
- * Lấy chi tiết survey theo ID
- */
-exports.getSurveyById = async (req, res) => {
+// Lấy chi tiết survey theo ID
+async function getSurveyById(req, res) {
   try {
-    const survey = await Survey.findById(req.params.id).populate("user", "username fullName");
+    const survey = await Survey.findById(req.params.id)
+      .populate("user", "username fullName")
+      .populate("course", "title");
     if (!survey) return res.status(404).json({ message: "Không tìm thấy survey" });
-    // Kiểm quyền: chỉ owner hoặc Admin/Manager
+    // Kiểm quyền
     if (!["Admin", "Manager"].includes(req.user.role) && survey.user._id.toString() !== req.user.id) {
       return res.status(403).json({ message: "Bạn không có quyền xem survey này" });
     }
@@ -118,12 +123,10 @@ exports.getSurveyById = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Lỗi server" });
   }
-};
+}
 
-/**
- * Cập nhật survey (Admin/Manager)
- */
-exports.updateSurvey = async (req, res) => {
+// Cập nhật survey (chỉ Admin/Manager)
+async function updateSurvey(req, res) {
   try {
     const updates = req.body;
     const forbidden = ["user", "score", "riskLevel", "type"];
@@ -136,12 +139,10 @@ exports.updateSurvey = async (req, res) => {
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-};
+}
 
-/**
- * Xóa survey (Admin/Manager)
- */
-exports.deleteSurvey = async (req, res) => {
+// Xóa survey (chỉ Admin/Manager)
+async function deleteSurvey(req, res) {
   try {
     const survey = await Survey.findByIdAndDelete(req.params.id);
     if (!survey) return res.status(404).json({ message: "Không tìm thấy survey" });
@@ -149,12 +150,10 @@ exports.deleteSurvey = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Lỗi server" });
   }
-};
+}
 
-/**
- * Lọc & phân trang
- */
-exports.filterSurveys = async (req, res) => {
+// Lọc & phân trang survey
+async function filterSurveys(req, res) {
   try {
     const { type, riskLevel, page = 1, limit = 10 } = req.query;
     const q = {};
@@ -170,12 +169,10 @@ exports.filterSurveys = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Lỗi server" });
   }
-};
+}
 
-/**
- * Thống kê theo riskLevel
- */
-exports.statsByRisk = async (req, res) => {
+// Thống kê theo riskLevel
+async function statsByRisk(req, res) {
   try {
     const stats = await Survey.aggregate([
       { $group: { _id: "$riskLevel", count: { $sum: 1 } } }
@@ -184,12 +181,10 @@ exports.statsByRisk = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Lỗi server" });
   }
-};
+}
 
-/**
- * Export CSV
- */
-exports.exportCsv = async (req, res) => {
+// Xuất CSV
+async function exportCsv(req, res) {
   try {
     const surveys = await Survey.find().populate("user", "username fullName");
     const fields = ["_id", "user.username", "user.fullName", "type", "score", "riskLevel", "createdAt"];
@@ -210,4 +205,19 @@ exports.exportCsv = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Lỗi server" });
   }
+}
+
+// ==== EXPORT TOÀN BỘ ĐÚNG CHUẨN ====
+module.exports = {
+  evaluate,
+  getQuestions,
+  submitSurvey,
+  getMySurveys,
+  getAllSurveys,
+  getSurveyById,
+  updateSurvey,
+  deleteSurvey,
+  filterSurveys,
+  statsByRisk,
+  exportCsv
 };
